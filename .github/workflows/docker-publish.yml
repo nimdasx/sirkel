@@ -19,9 +19,24 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Build and export to Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: ./sirkel-nginx-demo-build
+          load: true
+          tags: nimdasx/sirkel-nginx:test
+
+      - name: Test Docker image
+        run: |
+          docker run -d --name test-container -p 8080:80 nimdasx/sirkel-nginx:test
+          sleep 5
+          curl -f http://localhost:8080 || exit 1
+          docker stop test-container
+          docker rm test-container
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./sirkel-nginx-demo-build
           push: true
-          tags: nimdasx/sirkel-nginx
+          tags: nimdasx/sirkel-nginx:latest
