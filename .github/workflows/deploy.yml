@@ -1,0 +1,24 @@
+name: Deploy to Server
+
+on:
+  workflow_run:
+    workflows: ["Docker Build and Push"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            docker pull nimdasx/sirkel-nginx:latest
+            docker stop sirkel-nginx || true
+            docker rm sirkel-nginx || true
+            docker run -d --name sirkel-nginx --restart always -p 8001:80 nimdasx/sirkel-nginx:latest
